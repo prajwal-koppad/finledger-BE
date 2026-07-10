@@ -3,7 +3,7 @@
 This repository contains the backend and frontend solutions for the Mini Payment Ledger & Invoice Service assignment.
 
 ## Tech Stack
-* **Backend**: Java 17, Spring Boot, Spring Data JPA, H2 Database (In-Memory).
+* **Backend**: Java 17, Spring Boot, Spring Data JPA, MySQL.
 * **Frontend**: React, Vite, React Router, raw CSS (for clean and zero-dependency styles).
 * **Build Tools**: Maven, npm.
 
@@ -71,13 +71,16 @@ You can create more accounts via `POST /api/accounts` and check their derived ba
    npm install
    npm run dev
    ```
-3. The frontend proxy will automatically map `/api` to `localhost:8080` to bypass CORS issues.
+3. The frontend is configured to directly call the backend at `http://localhost:8080/api` (CORS is handled globally by the backend).
 
 ## What I'd Do Differently With More Time
-1. **Event-Driven Architecture (Kafka):** Instead of synchronously saving Ledger Entries within the `PaymentService` transaction, I would publish an `InvoicePaid` event to a Kafka topic. A separate consumer would process the event and write the double-entry records. This decouples the billing domain from the accounting domain.
-2. **GraphQL:** I used REST for simplicity given the time constraints, but I would migrate the read paths (e.g., fetching Account Balances and Invoice states) to GraphQL to match your team's stack.
+1. **Event-Driven Architecture (Spring Events):** Instead of synchronously saving Ledger Entries within the `PaymentService` transaction, I would publish an `InvoicePaidEvent` using Spring's `ApplicationEventPublisher`. A separate `@EventListener` or `@TransactionalEventListener` would process the event and write the double-entry records. This cleanly decouples the billing domain from the accounting domain without needing heavy external infrastructure.
+2. **Database Indexing & Caching (Redis):** As the ledger grows, calculating derived balances on the fly via `SUM()` will become slow. I would implement a Redis caching layer to store account balances and use a Write-Through caching strategy. I would also add composite indexes on `(account_id, created_at)` for the `ledger_entries` table to optimize range queries and pagination.
+3. **Pagination & API Rate Limiting:** I would introduce Spring Data JPA `Pageable` for all list endpoints to ensure the application scales safely as transaction volume grows. I'd also implement API rate limiting (e.g., using Bucket4j) to prevent abuse.
+4. **GraphQL:** I used REST for simplicity given the time constraints, but I would migrate the read paths (e.g., fetching Account Balances and Invoice states) to GraphQL to match your team's stack.
+5. **Distributed Tracing & Audit Logging:** For a production Fintech application, I would integrate Micrometer to trace payment transactions, making debugging and compliance auditing much easier.
 
 ## Shortcuts Taken
-- **Database:** Used an H2 in-memory database to allow you to run the project effortlessly without spinning up PostgreSQL or MySQL containers.
+- **Database:** Used a local MySQL database to persist data, rather than a full cloud deployment, to keep the submission self-contained.
 - **Hardcoded Default Accounts:** In `PaymentService`, I hardcoded a `DEFAULT_CASH_ACCOUNT_ID` and `DEFAULT_RECEIVABLE_ACCOUNT_ID` for simplicity in the API payload, rather than deriving them dynamically from tenant configs.
 - **Auth:** Omitted Authentication (JWT) and Authorization to focus purely on the financial state machine and ledger accuracy.
