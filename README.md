@@ -4,8 +4,7 @@ This repository contains the backend and frontend solutions for the Mini Payment
 
 ## Tech Stack
 * **Backend**: Java 17, Spring Boot, Spring Data JPA, MySQL.
-* **Frontend**: React, Vite, React Router, raw CSS (for clean and zero-dependency styles).
-* **Build Tools**: Maven, npm.
+* **Build Tools**: Maven.
 
 ## Core Implementation Features
 
@@ -63,15 +62,6 @@ You can create more accounts via `POST /api/accounts` and check their derived ba
 3. The API will start at `http://localhost:8080`.
 4. (Optional) Run tests with `mvn test`.
 
-### Frontend (`ledger-ui`)
-1. Ensure Node.js is installed.
-2. Navigate to the `ledger-ui` directory:
-   ```bash
-   cd ledger-ui
-   npm install
-   npm run dev
-   ```
-3. The frontend is configured to directly call the backend at `http://localhost:8080/api` (CORS is handled globally by the backend).
 
 ## What I'd Do Differently With More Time
 1. **Event-Driven Architecture (Spring Events):** Instead of synchronously saving Ledger Entries within the `PaymentService` transaction, I would publish an `InvoicePaidEvent` using Spring's `ApplicationEventPublisher`. A separate `@EventListener` or `@TransactionalEventListener` would process the event and write the double-entry records. This cleanly decouples the billing domain from the accounting domain without needing heavy external infrastructure.
